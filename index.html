@@ -1,8 +1,21 @@
 <html>
-    <script>
-        console.log("hey");
-    </script>   
-    <body>
-        <h1>Hello World</h1>
-    </body>
+<script>
+    const data = fetch("https://api.github.com/users/aidencullo")
+    .then(response => response.json())
+    .then(data => {
+        console.log(data);
+        document.getElementById("stats")
+        const parent = document.getElementById("stats");
+        const child = document.createElement("p");
+        child.textContent = data.public_repos;
+        parent.appendChild(child);
+    })
+    .catch(error => {
+        console.error("Error:", error);
+    });
+</script>   
+<body>
+    <h1> Aiden Cullon's GitHub</h1>
+    <div id="stats">stats</div>
+</body>
 </html>
