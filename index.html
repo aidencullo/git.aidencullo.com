@@ -4,25 +4,32 @@
     .then(response => response.json())
     .then(data => {
         console.log(data);
-        document.getElementById("stats")
-        const parent = document.getElementById("stats");
-        const child = document.createElement("p");
-        child.textContent = "Repos: " + data.public_repos_count;
-        parent.appendChild(child);
+        document.getElementById("stats");
+        const parent = document.body;
+        const child1 = document.createElement("h1");
+        child1.textContent = "Aiden Cullo";
+        parent.appendChild(child1);
 
-        const child2 = document.createElement("p");
-        child.textContent = "Followers: " + data.followers;
-        parent.appendChild(child);
+        const child2 = document.createElement("h2");
+        child2.textContent = "GitHub";
+        parent.appendChild(child2);
+
         const child3 = document.createElement("p");
-        child.textContent = "Following: " + data.following;
-        parent.appendChild(child);
+        child3.textContent = "Repos: " + data.public_repos_count;
+        parent.appendChild(child3);
+
+        const child4 = document.createElement("p");
+        child4.textContent = "Followers: " + data.followers;
+        parent.appendChild(child4);
+            
+        const child5 = document.createElement("p");
+        child5.textContent = "Following: " + data.following;
+        parent.appendChild(child5);
     })
     .catch(error => {
         console.error("Error:", error);
     });
 </script>   
 <body>
-    <h1> Aiden Cullo</h1>
-    <div id="stats">stats</div>
 </body>
 </html>
