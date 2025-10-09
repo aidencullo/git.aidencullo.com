@@ -7,7 +7,14 @@
         document.getElementById("stats")
         const parent = document.getElementById("stats");
         const child = document.createElement("p");
-        child.textContent = data.public_repos;
+        child.textContent = "Repos: " + data.public_repos_count;
+        parent.appendChild(child);
+
+        const child2 = document.createElement("p");
+        child.textContent = "Followers: " + data.followers;
+        parent.appendChild(child);
+        const child3 = document.createElement("p");
+        child.textContent = "Following: " + data.following;
         parent.appendChild(child);
     })
     .catch(error => {
@@ -15,7 +22,7 @@
     });
 </script>   
 <body>
-    <h1> Aiden Cullon's GitHub</h1>
+    <h1> Aiden Cullo</h1>
     <div id="stats">stats</div>
 </body>
 </html>
