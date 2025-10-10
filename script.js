@@ -6,18 +6,17 @@ function appendTextElement(tagName, text, parent) {
     return element;
 }
 
-fetch("https://api.github.com/users/aidencullo")
+const gh_events_endpoint = "https://api.github.com/users/aidencullo/events";
+
+fetch(gh_events_endpoint)
     .then(response => response.json())
-    .then(data => {
-        console.log(data);
-        document.getElementById("stats");
+    .then(events => {
         const parent = document.body;
         appendTextElement("h1", "Aiden Cullo", parent);
         appendTextElement("h2", "GitHub", parent);
-        appendTextElement("p", "Location: " + data.location, parent);
-        appendTextElement("p", "Followers: " + data.followers, parent);
-        appendTextElement("p", "Following: " + data.following, parent);
-    })
+        const filteredEvents = events.filter(event => event.created_at.includes("2025-10-10"));
+        appendTextElement("p", "Commits: " + filteredEvents.length);
+        })
     .catch(error => {
         console.error("Error:", error);
     });
