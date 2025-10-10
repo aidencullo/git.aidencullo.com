@@ -6,25 +6,6 @@ function appendTextElement(tagName, text, parent) {
     return element;
 }
 
-fetch("https://api.github.com/users/aidencullo/repos")
-    .then(response => response.json())
-    .then(repos => {
-        repos.forEach(repo => {
-            fetch(`https://api.github.com/repos/aidencullo/${repo.name}/commits`)
-                .then(response => response.json())
-                .then(commits => {
-                    appendTextElement("p", `${repo.name}: ${commits}`);
-                    console.log(repo.name, commits);
-                })
-                .catch(error => {
-                    console.error(`Error fetching commits for ${repo.name}:`, error);
-                });
-        });
-    })
-    .catch(error => {
-        console.error("Error fetching repos:", error);
-    });
-
 fetch("https://api.github.com/users/aidencullo")
     .then(response => response.json())
     .then(data => {
