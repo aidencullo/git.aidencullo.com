@@ -16,7 +16,26 @@ fetch(gh_events_endpoint)
 	    }
 	}
 	console.log(commits)
+
+
+	const commitsDiv = document.createElement("div");
+	commitsDiv.textContent = "commits: " + commits;
+	document.body.appendChild(commitsDiv);
+
+
+	
     })
     .catch(error => {
         console.error("Error:", error);
     });
+
+
+const div = document.createElement("div");
+div.textContent = "Aiden Cullo";
+document.body.appendChild(div);
+
+
+const dateDiv = document.createElement("div");
+dateDiv.textContent = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" })).toDateString()
+document.body.appendChild(dateDiv);
+
