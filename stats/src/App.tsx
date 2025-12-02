@@ -35,7 +35,12 @@ function App() {
         url = `${baseUrl}?${urlParams.toString()}`;
       }
     };
-    fetchRepos();
+    try {
+      fetchRepos();
+    } catch (error) {
+      console.error('Error fetching repositories:', error);
+      setRepos([]);
+    }
   }, []);
 
   return (
