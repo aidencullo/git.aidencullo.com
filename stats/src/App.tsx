@@ -19,7 +19,7 @@ function App() {
       while (true) {
         const response = await fetch(url, {
           headers: {
-            Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}`,
+            // Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}`,
           },
         });
         const data = await response.json();
