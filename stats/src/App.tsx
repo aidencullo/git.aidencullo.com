@@ -53,7 +53,8 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Public and Privatep GitHub Repositories</h1>
+      <h1>Public and Private GitHub Repositories</h1>
+        <h1>Public and Private GitHub Repositories</h1>
         {!fetching ? (
             <p>{repos.length}</p>
         ) : (
