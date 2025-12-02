@@ -15,11 +15,18 @@ function App() {
       let page = 1;
       let urlParams = new URLSearchParams({ per_page: '100', page: page.toString() });
       let url = `${baseUrl}?${urlParams.toString()}`;
-      
+
       while (true) {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}`,
+          },
+        });
         const data = await response.json();
-        setRepos(prev => [...prev, ...data]);
+        setRepos((prev) => {
+          const ids = new Set(prev.map(r => r.id));
+          return [...prev, ...data.filter((r: Repo) => !ids.has(r.id))];
+        });
         if (data.length === 0) {
           break;
         }
@@ -36,11 +43,7 @@ function App() {
       <header className="App-header">
         <h1>My GitHub Repositories</h1>
         {repos.length > 0 ? (
-          <ul>
-            {repos.map((repo) => (
-              <li key={repo.id}>{repo.name}</li>
-            ))}
-          </ul>
+          <p>{repos.length}</p>
         ) : (
           <p>Loading repositories...</p>
         )}
