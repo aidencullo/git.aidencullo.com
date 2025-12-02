@@ -1,31 +1,32 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
-interface Post {
+interface Repo {
   id: number;
-  title: string;
-  body: string;
+  name: string;
 }
 
 function App() {
-  const [post, setPost] = useState<Post | null>(null);
+  const [repos, setRepos] = useState<Repo[]>([]);
 
   useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/posts/1')
+    fetch('https://api.github.com/users/aidencullo/repos')
       .then((response) => response.json())
-      .then((data) => setPost(data));
+      .then((data) => setRepos(data));
   }, []);
 
   return (
     <div className="App">
       <header className="App-header">
-        {post ? (
-          <div>
-            <h1>{post.title}</h1>
-            <p>{post.body}</p>
-          </div>
+        <h1>My GitHub Repositories</h1>
+        {repos.length > 0 ? (
+          <ul>
+            {repos.map((repo) => (
+              <li key={repo.id}>{repo.name}</li>
+            ))}
+          </ul>
         ) : (
-          <p>Loading...</p>
+          <p>Loading repositories...</p>
         )}
       </header>
     </div>
