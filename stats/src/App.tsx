@@ -6,7 +6,6 @@ interface Repo {
   name: string;
 }
 
-console.log(import.meta.env.VITE_GITHUB_TOKEN);
 function App() {
   const [repos, setRepos] = useState<Repo[]>([]);
   const [fetching, setFetching] = useState(false);
@@ -51,7 +50,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>My GitHub Repositories</h1>
+        <h1>Public and Privatep GitHub Repositories</h1>
         {!fetching ? (
             <p>{repos.length}</p>
         ) : (
