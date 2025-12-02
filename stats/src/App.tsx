@@ -4,6 +4,9 @@ import './App.css';
 interface Repo {
   id: number;
   name: string;
+  owner: {
+    login: string;
+  };
 }
 
 function App() {
@@ -25,7 +28,7 @@ function App() {
           },
         });
         const data = await response.json();
-        const newRepos = data.filter(r => r.owner.login === 'aidencullo');
+        const newRepos = data.filter((r: Repo) => r.owner.login === 'aidencullo');
         setRepos((prev) => {
           const ids = new Set(prev.map(r => r.id));
           return [...prev, ...newRepos.filter((r: Repo) => !ids.has(r.id))];
