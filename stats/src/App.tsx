@@ -6,12 +6,15 @@ interface Repo {
   name: string;
 }
 
+console.log(import.meta.env.VITE_GITHUB_TOKEN);
 function App() {
   const [repos, setRepos] = useState<Repo[]>([]);
+  const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
     const fetchRepos = async () => {
-      const baseUrl = 'https://api.github.com/users/aidencullo/repos';
+      setFetching(true);
+      const baseUrl = 'https://api.github.com/user/repos';
       let page = 1;
       let urlParams = new URLSearchParams({ per_page: '100', page: page.toString() });
       let url = `${baseUrl}?${urlParams.toString()}`;
@@ -19,13 +22,14 @@ function App() {
       while (true) {
         const response = await fetch(url, {
           headers: {
-            // Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}`,
+            Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}`,
           },
         });
         const data = await response.json();
+        const newRepos = data.filter(r => r.owner.login === 'aidencullo');
         setRepos((prev) => {
           const ids = new Set(prev.map(r => r.id));
-          return [...prev, ...data.filter((r: Repo) => !ids.has(r.id))];
+          return [...prev, ...newRepos.filter((r: Repo) => !ids.has(r.id))];
         });
         if (data.length === 0) {
           break;
@@ -34,6 +38,7 @@ function App() {
         urlParams = new URLSearchParams({ per_page: '100', page: page.toString() });
         url = `${baseUrl}?${urlParams.toString()}`;
       }
+      setFetching(false);
     };
     try {
       fetchRepos();
@@ -47,8 +52,8 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h1>My GitHub Repositories</h1>
-        {repos.length > 0 ? (
-          <p>{repos.length}</p>
+        {!fetching ? (
+            <p>{repos.length}</p>
         ) : (
           <p>Loading repositories...</p>
         )}
