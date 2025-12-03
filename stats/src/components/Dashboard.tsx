@@ -1,5 +1,7 @@
 import '../App.css';
 import { useRepos } from '../hooks/useRepos';
+import RepoStats from './RepoStats';
+import CommitsStats from './CommitsStats';
 
 function Dashboard() {
   const { repos, fetching } = useRepos();
@@ -7,12 +9,9 @@ function Dashboard() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>aidencullo's GitHub Repositories</h1>
-        {!fetching ? (
-          <p>{repos.length}</p>
-        ) : (
-          <p>Loading repositories...</p>
-        )}
+        aidencullo
+        <RepoStats reposCount={repos.length} fetching={fetching} />
+        <CommitsStats />
       </header>
     </div>
   );
