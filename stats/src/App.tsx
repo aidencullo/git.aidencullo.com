@@ -1,21 +1,7 @@
-import './App.css';
-import { useRepos } from './hooks/useRepos';
+import Dashboard from './components/Dashboard';
 
 function App() {
-  const { repos, fetching } = useRepos();
-
-  return (
-    <div className="App">
-      <header className="App-header">
-      <h1>aidencullo's GitHub Repositories</h1>
-        {!fetching ? (
-            <p>{repos.length}</p>
-        ) : (
-          <p>Loading repositories...</p>
-        )}
-      </header>
-    </div>
-  );
+  return <Dashboard />;
 }
 
 export default App;
