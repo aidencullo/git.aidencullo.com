@@ -7,7 +7,6 @@ interface Event {
 export function useCommits() {
   const [commits, setCommits] = useState(0);
   const [fetching, setFetching] = useState(false);
-  const [dates, setDates] = useState<string[]>([]);
 
 
   useEffect(() => {
@@ -21,12 +20,11 @@ export function useCommits() {
             },
           });
           const data = await response.json();
-          console.log(data)
-          setCommits(data.length);
-          setDates(data.map((e: Event) => {
+          const todaysEvents = data.filter((e: Event) => {
             const date = new Date(e.created_at);
-            return date.toLocaleString('en-US', { timeZone: 'America/New_York' });
-          }));
+            return date.toLocaleDateString('en-US', { timeZone: 'America/New_York' }) === new Date().toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+          });
+          setCommits(todaysEvents.length);
         } catch (error) {
           console.error('Error fetching commits:', error);
         } finally {
@@ -36,6 +34,6 @@ export function useCommits() {
     fetchEvents();
   }, []);
 
-  return { commits, fetching, dates };
+  return { commits, fetching };
 }
 
