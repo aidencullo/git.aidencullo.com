@@ -5,7 +5,7 @@ function CommitsStats() {
 
   return (
     <>
-      {!fetching ? (
+      commits: {!fetching ? (
         <p>{commits.length}</p>
       ) : (
         <p>Loading commits...</p>

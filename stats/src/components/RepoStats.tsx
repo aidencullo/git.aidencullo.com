@@ -6,7 +6,7 @@ interface RepoStatsProps {
 function RepoStats({ reposCount, fetching }: RepoStatsProps) {
   return (
     <>
-      {!fetching ? (
+      repos: {!fetching ? (
         <p>{reposCount}</p>
       ) : (
         <p>Loading repositories...</p>

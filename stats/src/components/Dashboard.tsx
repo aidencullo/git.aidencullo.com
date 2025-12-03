@@ -9,7 +9,7 @@ function Dashboard() {
   return (
     <div className="App">
       <header className="App-header">
-        aidencullo
+        <h1>aidencullo</h1>
         <RepoStats reposCount={repos.length} fetching={fetching} />
         <CommitsStats />
       </header>
