@@ -1,7 +1,7 @@
 import { useCommits } from '../hooks/useCommits';
 
 function CommitsStats() {
-  const { commits, fetching } = useCommits();
+  const { commits, fetching, dates } = useCommits();
 
   return (
     <>
@@ -10,6 +10,7 @@ function CommitsStats() {
       ) : (
         <p>Loading commits...</p>
       )}
+      dates: {dates.map((date) => <p>{date}</p>)}
     </>
   );
 }
