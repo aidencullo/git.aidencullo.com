@@ -1,7 +1,7 @@
 import { useCommits } from '../hooks/useCommits';
 
 function CommitsStats() {
-  const { commitsToday, commitsYesterday, fetching } = useCommits();
+  const { commitsToday, commitsYesterday, gitlabCommitsToday, fetching } = useCommits();
 
   if (fetching) {
     return <p>Loading commits...</p>;
@@ -11,6 +11,7 @@ function CommitsStats() {
     <>
       <p>commits today: {commitsToday}</p>
       <p>commits yesterday: {commitsYesterday}</p>
+      <p>gitlab commits today: {gitlabCommitsToday}</p>
     </>
   );
 }
