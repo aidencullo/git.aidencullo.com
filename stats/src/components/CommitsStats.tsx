@@ -1,15 +1,16 @@
 import { useCommits } from '../hooks/useCommits';
 
 function CommitsStats() {
-  const { commits, fetching } = useCommits();
+  const { commitsToday, commitsYesterday, fetching } = useCommits();
+
+  if (fetching) {
+    return <p>Loading commits...</p>;
+  }
 
   return (
     <>
-      commits today: {!fetching ? (
-        <p>{commits}</p>
-      ) : (
-        <p>Loading commits...</p>
-      )}
+      <p>commits today: {commitsToday}</p>
+      <p>commits yesterday: {commitsYesterday}</p>
     </>
   );
 }

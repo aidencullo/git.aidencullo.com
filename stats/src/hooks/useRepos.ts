@@ -8,6 +8,22 @@ interface Repo {
   };
 }
 
+const BASE_URL = 'https://api.github.com/user/repos';
+
+function buildRepoUrl(baseUrl: string, page: number): string {
+  const urlParams = new URLSearchParams({ per_page: '100', page: page.toString() });
+  return `${baseUrl}?${urlParams.toString()}`;
+}
+
+async function fetchGitHubData(url: string): Promise<Repo[]> {
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}`,
+    },
+  });
+  return response.json();
+}
+
 export function useRepos() {
   const [repos, setRepos] = useState<Repo[]>([]);
   const [fetching, setFetching] = useState(false);
@@ -16,18 +32,11 @@ export function useRepos() {
     const fetchRepos = async () => {
       try {
         setFetching(true);
-        const baseUrl = 'https://api.github.com/user/repos';
         let page = 1;
-        let urlParams = new URLSearchParams({ per_page: '100', page: page.toString() });
-        let url = `${baseUrl}?${urlParams.toString()}`;
+        let url = buildRepoUrl(BASE_URL, page);
 
         while (true) {
-          const response = await fetch(url, {
-            headers: {
-              Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}`,
-            },
-          });
-          const data = await response.json();
+          const data = await fetchGitHubData(url);
           const newRepos = data.filter((r: Repo) => r.owner.login === 'aidencullo');
           setRepos((prev) => {
             const ids = new Set(prev.map(r => r.id));
@@ -37,8 +46,7 @@ export function useRepos() {
             break;
           }
           page++;
-          urlParams = new URLSearchParams({ per_page: '100', page: page.toString() });
-          url = `${baseUrl}?${urlParams.toString()}`;
+          url = buildRepoUrl(BASE_URL, page);
         }
       } catch (error) {
         console.error('Error fetching repositories:', error);
