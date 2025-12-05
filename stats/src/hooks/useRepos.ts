@@ -36,11 +36,6 @@ function filterReposByOwner(repos: Repo[], owner: string): Repo[] {
   return repos.filter((repo) => repo.owner.login === owner);
 }
 
-function getUniqueRepos(existingRepos: Repo[], newRepos: Repo[]): Repo[] {
-  const existingIds = new Set(existingRepos.map((repo) => repo.id));
-  return newRepos.filter((repo) => !existingIds.has(repo.id));
-}
-
 // Main Hook
 export function useRepos() {
   const [repos, setRepos] = useState<Repo[]>([]);
@@ -58,10 +53,7 @@ export function useRepos() {
           const pageData = await fetchGitHubData(url);
           const filteredRepos = filterReposByOwner(pageData, USERNAME);
 
-          setRepos((prevRepos) => {
-            const uniqueNewRepos = getUniqueRepos(prevRepos, filteredRepos);
-            return [...prevRepos, ...uniqueNewRepos];
-          });
+          setRepos((prevRepos) => [...prevRepos, ...filteredRepos]);
 
           hasMorePages = pageData.length > 0;
           if (hasMorePages) {
