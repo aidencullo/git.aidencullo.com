@@ -15,7 +15,7 @@ export function useCommits() {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      const url = `https://api.github.com/users/aidencullo/events`;
+      const url = `https://api.github.com/users/aidencullo/events?per_page=100`;
       try {
         setFetching(true);
         const response = await fetch(url, {
@@ -38,6 +38,7 @@ export function useCommits() {
 
         let todaysCommits = 0;
         let yesterdaysCommits = 0;
+        
 
         data.forEach((event) => {
           const eventDate = toDateString(new Date(event.created_at));
