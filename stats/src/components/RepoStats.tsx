@@ -1,16 +1,11 @@
 interface RepoStatsProps {
   reposCount: number;
-  fetching: boolean;
 }
 
-function RepoStats({ reposCount, fetching }: RepoStatsProps) {
+function RepoStats({ reposCount }: RepoStatsProps) {
   return (
     <>
-      repos: {!fetching ? (
-        <p>{reposCount}</p>
-      ) : (
-        <p>Loading repositories...</p>
-      )}
+        <p>repos: {reposCount}</p>
     </>
   );
 }
