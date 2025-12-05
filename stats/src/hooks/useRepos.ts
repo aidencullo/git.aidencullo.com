@@ -8,10 +8,18 @@ interface Repo {
   };
 }
 
+// Constants
 const BASE_URL = 'https://api.github.com/user/repos';
+const USERNAME = 'aidencullo';
+const PER_PAGE = 100;
+const INITIAL_PAGE = 1;
 
+// Helper Functions
 function buildRepoUrl(baseUrl: string, page: number): string {
-  const urlParams = new URLSearchParams({ per_page: '100', page: page.toString() });
+  const urlParams = new URLSearchParams({
+    per_page: PER_PAGE.toString(),
+    page: page.toString(),
+  });
   return `${baseUrl}?${urlParams.toString()}`;
 }
 
@@ -24,29 +32,41 @@ async function fetchGitHubData(url: string): Promise<Repo[]> {
   return response.json();
 }
 
+function filterReposByOwner(repos: Repo[], owner: string): Repo[] {
+  return repos.filter((repo) => repo.owner.login === owner);
+}
+
+function getUniqueRepos(existingRepos: Repo[], newRepos: Repo[]): Repo[] {
+  const existingIds = new Set(existingRepos.map((repo) => repo.id));
+  return newRepos.filter((repo) => !existingIds.has(repo.id));
+}
+
+// Main Hook
 export function useRepos() {
   const [repos, setRepos] = useState<Repo[]>([]);
   const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
-    const fetchRepos = async () => {
+    const fetchAllRepos = async () => {
       try {
         setFetching(true);
-        let page = 1;
-        let url = buildRepoUrl(BASE_URL, page);
+        let currentPage = INITIAL_PAGE;
+        let hasMorePages = true;
 
-        while (true) {
-          const data = await fetchGitHubData(url);
-          const newRepos = data.filter((r: Repo) => r.owner.login === 'aidencullo');
-          setRepos((prev) => {
-            const ids = new Set(prev.map(r => r.id));
-            return [...prev, ...newRepos.filter((r: Repo) => !ids.has(r.id))];
+        while (hasMorePages) {
+          const url = buildRepoUrl(BASE_URL, currentPage);
+          const pageData = await fetchGitHubData(url);
+          const filteredRepos = filterReposByOwner(pageData, USERNAME);
+
+          setRepos((prevRepos) => {
+            const uniqueNewRepos = getUniqueRepos(prevRepos, filteredRepos);
+            return [...prevRepos, ...uniqueNewRepos];
           });
-          if (data.length === 0) {
-            break;
+
+          hasMorePages = pageData.length > 0;
+          if (hasMorePages) {
+            currentPage++;
           }
-          page++;
-          url = buildRepoUrl(BASE_URL, page);
         }
       } catch (error) {
         console.error('Error fetching repositories:', error);
@@ -54,7 +74,8 @@ export function useRepos() {
         setFetching(false);
       }
     };
-    fetchRepos();
+
+    fetchAllRepos();
   }, []);
 
   return { repos, fetching };
