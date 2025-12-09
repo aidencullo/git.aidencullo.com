@@ -1,12 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { countCommitsForRecentDays } from '../utils/commits';
+import type { GitHubEvent } from '../utils/commits';
+import { buildUserEventsUrl, fetchGitHubJson } from '../utils/github';
 
-interface Event {
-  created_at: string;
-}
-
-const TIME_ZONE = 'America/New_York';
-const toDateString = (date: Date) =>
-  date.toLocaleDateString('en-US', { timeZone: TIME_ZONE });
+const EVENTS_URL = buildUserEventsUrl();
 
 export function useCommits() {
   const [commitsToday, setCommitsToday] = useState(0);
@@ -14,51 +11,35 @@ export function useCommits() {
   const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
+    let isCancelled = false;
+
     const fetchEvents = async () => {
-      const url = `https://api.github.com/users/aidencullo/events?per_page=100`;
       try {
         setFetching(true);
-        const response = await fetch(url, {
-          headers: {
-            Authorization: `token ${import.meta.env.VITE_GITHUB_TOKEN}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`GitHub events request failed: ${response.status}`);
+        const events = await fetchGitHubJson<GitHubEvent[]>(EVENTS_URL);
+        if (isCancelled) {
+          return;
         }
 
-        const data: Event[] = await response.json();
-
-        const now = new Date();
-        const todayString = toDateString(now);
-        const yesterdayDate = new Date(now);
-        yesterdayDate.setDate(now.getDate() - 1);
-        const yesterdayString = toDateString(yesterdayDate);
-
-        let todaysCommits = 0;
-        let yesterdaysCommits = 0;
-        
-
-        data.forEach((event) => {
-          const eventDate = toDateString(new Date(event.created_at));
-          if (eventDate === todayString) {
-            todaysCommits += 1;
-          } else if (eventDate === yesterdayString) {
-            yesterdaysCommits += 1;
-          }
-        });
-
-        setCommitsToday(todaysCommits);
-        setCommitsYesterday(yesterdaysCommits);
+        const { today, yesterday } = countCommitsForRecentDays(events);
+        setCommitsToday(today);
+        setCommitsYesterday(yesterday);
       } catch (error) {
-        console.error('Error fetching commits:', error);
+        if (!isCancelled) {
+          console.error('Error fetching commits:', error);
+        }
       } finally {
-        setFetching(false);
+        if (!isCancelled) {
+          setFetching(false);
+        }
       }
     };
 
     fetchEvents();
+
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
   return { commitsToday, commitsYesterday, fetching };
