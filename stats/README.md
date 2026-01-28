@@ -2,6 +2,22 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Commit stats sources
+
+This app shows commit stats aggregated from:
+
+- GitHub: user events API (counts commits from `PushEvent` payloads)
+- GitLab: project commits API (counts commits from configured projects)
+
+### Environment variables
+
+Create a `.env.local` (or set env vars in your deploy) with:
+
+- `VITE_GITHUB_TOKEN` (optional): GitHub token to avoid rate limits.
+- `VITE_GITLAB_TOKEN` (optional): GitLab personal access token.
+- `VITE_GITLAB_PROJECT_IDS` (optional): comma-separated project IDs or paths, e.g. `12345,group/project`.
+- `VITE_GITLAB_BASE_URL` (optional): override GitLab API base URL (defaults to `https://gitlab.com/api/v4`).
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh

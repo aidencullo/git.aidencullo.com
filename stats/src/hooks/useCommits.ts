@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
-import { countCommitsForRecentDays } from '../utils/commits';
-import type { GitHubEvent } from '../utils/commits';
+import {
+  countCommitsForRecentDays,
+  toGitHubCommitItems,
+  toGitLabCommitItems,
+} from '../utils/commits';
+import type { GitHubEvent, GitLabCommit } from '../utils/commits';
 import { buildUserEventsUrl, fetchGitHubJson } from '../utils/github';
+import { buildProjectCommitsUrl, fetchGitLabJson, getGitLabProjectIds } from '../utils/gitlab';
 
 const EVENTS_URL = buildUserEventsUrl();
 
@@ -16,12 +21,26 @@ export function useCommits() {
     const fetchEvents = async () => {
       try {
         setFetching(true);
-        const events = await fetchGitHubJson<GitHubEvent[]>(EVENTS_URL);
+        const now = new Date();
+        const since = new Date(now);
+        since.setDate(since.getDate() - 2);
+
+        const [githubEvents, gitlabCommitsLists] = await Promise.all([
+          fetchGitHubJson<GitHubEvent[]>(EVENTS_URL),
+          Promise.all(
+            getGitLabProjectIds().map((projectId) =>
+              fetchGitLabJson<GitLabCommit[]>(buildProjectCommitsUrl(projectId, since)),
+            ),
+          ),
+        ]);
+
         if (isCancelled) {
           return;
         }
 
-        const { today, yesterday } = countCommitsForRecentDays(events);
+        const githubItems = toGitHubCommitItems(githubEvents);
+        const gitlabItems = toGitLabCommitItems(gitlabCommitsLists.flat());
+        const { today, yesterday } = countCommitsForRecentDays([...githubItems, ...gitlabItems], now);
         setCommitsToday(today);
         setCommitsYesterday(yesterday);
       } catch (error) {
