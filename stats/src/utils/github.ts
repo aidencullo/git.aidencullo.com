@@ -4,6 +4,8 @@ import {
   GITHUB_USERNAME,
 } from '../constants/github';
 
+const GITHUB_GRAPHQL_URL = 'https://api.github.com/graphql';
+
 export function buildUserEventsUrl(
   username: string = GITHUB_USERNAME,
   perPage: number = GITHUB_EVENTS_PER_PAGE,
@@ -21,7 +23,7 @@ export function buildGitHubHeaders(): HeadersInit {
   }
 
   return {
-    Authorization: `token ${token}`,
+    Authorization: `bearer ${token}`,
   };
 }
 
@@ -39,5 +41,27 @@ export async function fetchGitHubJson<T>(url: string, init?: RequestInit) {
   }
 
   return response.json() as Promise<T>;
+}
+
+export async function fetchGitHubGraphQL<T>(query: string): Promise<T> {
+  const response = await fetch(GITHUB_GRAPHQL_URL, {
+    method: 'POST',
+    headers: {
+      ...buildGitHubHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub GraphQL request failed: ${response.status}`);
+  }
+
+  const json = await response.json();
+  if (json.errors) {
+    throw new Error(`GitHub GraphQL error: ${json.errors[0].message}`);
+  }
+
+  return json.data as T;
 }
 

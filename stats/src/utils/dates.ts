@@ -8,6 +8,13 @@ export function formatDateToTimeZone(
   return date.toLocaleDateString(locale, { timeZone });
 }
 
+export function formatDateToISO(
+  date: Date,
+  timeZone: string = DEFAULT_TIME_ZONE,
+) {
+  return date.toLocaleDateString('sv-SE', { timeZone });
+}
+
 export function getRelativeDate(base: Date, daysOffset: number) {
   const adjusted = new Date(base);
   adjusted.setDate(adjusted.getDate() + daysOffset);
