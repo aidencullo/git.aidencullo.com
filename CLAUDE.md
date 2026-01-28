@@ -48,4 +48,4 @@ Optional `VITE_GITHUB_TOKEN` in `stats/.env.local` for higher GitHub API rate li
 - Functional components with custom hooks for data fetching
 - TypeScript strict mode enabled
 - ESLint flat config (v9+) with React hooks and refresh plugins
-- Husky pre-commit hook runs `npm test`
+- Husky pre-commit hook configured in `stats/.husky/pre-commit`
