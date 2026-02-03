@@ -37,7 +37,25 @@ stats/src/
     └── time.ts           # DEFAULT_TIME_ZONE (America/New_York), locale
 ```
 
-**Data flow:** `CommitsStats` → `useCommits` hook → GitHub Events API → `countCommitsForRecentDays()`
+**Data flow:** `CommitsStats` → `useCommits` hook → GitHub GraphQL API
+
+## useCommits Hook Logic
+
+The `useCommits` hook (`stats/src/hooks/useCommits.ts`) fetches commit counts using GitHub's GraphQL API:
+
+1. **Queries:** Makes 3 GraphQL requests:
+   - Initial query to get the authenticated user's GitHub ID
+   - Query for commits since today's midnight UTC
+   - Query for commits since yesterday's midnight UTC
+
+2. **Counting:** The `since` parameter is cumulative (returns all commits from that date to now):
+   - `todayTotal` = commits since today 00:00:00 UTC
+   - `yesterdayTotal` = commits since yesterday 00:00:00 UTC (includes today)
+   - `commitsYesterday` = `yesterdayTotal - todayTotal`
+
+3. **Scope:** Queries up to 100 repos owned by the user, sums `totalCount` from each repo's default branch history
+
+**Known Issue:** The query uses UTC midnight (`T00:00:00Z`), not local timezone. For users in America/New_York, this means date boundaries are 5-8 hours off from local time.
 
 ## Environment Variables
 
