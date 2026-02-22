@@ -2,47 +2,110 @@ import { useEffect, useState } from 'react';
 import { fetchGitHubGraphQL } from '../utils/github';
 import { formatDateToISO, getRelativeDate } from '../utils/dates';
 
-interface RepoNode {
-  name: string;
-  defaultBranchRef: {
-    target: {
-      history: {
-        totalCount: number;
-      };
-    };
-  } | null;
+interface ContributionDay {
+  contributionCount: number;
+  date: string;
+}
+
+interface CommitContribution {
+  contributions: {
+    totalCount: number;
+  };
 }
 
 interface GraphQLResponse {
   viewer: {
-    id: string;
-    repositories: {
-      nodes: RepoNode[];
+    contributionsCollection: {
+      contributionCalendar: {
+        weeks: Array<{
+          contributionDays: ContributionDay[];
+        }>;
+      };
+      commitContributionsByRepository: CommitContribution[];
     };
   };
 }
 
-function buildCommitsQuery(sinceDate: string, authorId?: string): string {
-  const authorFilter = authorId ? `, author: {id: "${authorId}"}` : '';
-  return `{
+interface CommitsSnapshot {
+  commitsToday: number;
+  commitsYesterday: number;
+  repoCount: number;
+  fetchedAt: number;
+}
+
+const CACHE_KEY = 'commits-snapshot-v1';
+const CACHE_TTL_MS = 60_000;
+
+function buildCommitsQuery(fromDate: string): string {
+  return `query {
     viewer {
-      id
-      repositories(first: 100, orderBy: {field: PUSHED_AT, direction: DESC}, ownerAffiliations: OWNER) {
-        nodes {
-          name
-          defaultBranchRef {
-            target {
-              ... on Commit {
-                history(first: 1, since: "${sinceDate}"${authorFilter}) {
-                  totalCount
-                }
-              }
+      contributionsCollection(from: "${fromDate}T00:00:00Z") {
+        contributionCalendar {
+          weeks {
+            contributionDays {
+              date
+              contributionCount
             }
+          }
+        }
+        commitContributionsByRepository(maxRepositories: 100) {
+          contributions {
+            totalCount
           }
         }
       }
     }
   }`;
+}
+
+function readCache(): CommitsSnapshot | null {
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as CommitsSnapshot;
+    if (Date.now() - parsed.fetchedAt > CACHE_TTL_MS) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(snapshot: Omit<CommitsSnapshot, 'fetchedAt'>) {
+  try {
+    window.localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ ...snapshot, fetchedAt: Date.now() })
+    );
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function extractCounts(
+  weeks: Array<{ contributionDays: ContributionDay[] }>,
+  todayISO: string,
+  yesterdayISO: string,
+) {
+  let commitsToday = 0;
+  let commitsYesterday = 0;
+
+  for (const week of weeks) {
+    for (const day of week.contributionDays) {
+      if (day.date === todayISO) {
+        commitsToday = day.contributionCount;
+      } else if (day.date === yesterdayISO) {
+        commitsYesterday = day.contributionCount;
+      }
+    }
+  }
+
+  return { commitsToday, commitsYesterday };
 }
 
 export function useCommits() {
@@ -54,44 +117,49 @@ export function useCommits() {
   useEffect(() => {
     let isCancelled = false;
 
+    const cached = readCache();
+    if (cached) {
+      setCommitsToday(cached.commitsToday);
+      setCommitsYesterday(cached.commitsYesterday);
+      setRepoCount(cached.repoCount);
+    }
+
     const fetchCommits = async () => {
       try {
-        setFetching(true);
+        if (!cached) {
+          setFetching(true);
+        }
 
         const now = new Date();
-        const todayStr = formatDateToISO(now);
-        const yesterdayDate = getRelativeDate(now, -1);
-        const yesterdayStr = formatDateToISO(yesterdayDate);
+        const todayISO = formatDateToISO(now);
+        const yesterdayISO = formatDateToISO(getRelativeDate(now, -1));
+        const fromISO = formatDateToISO(getRelativeDate(now, -6));
 
-        // First query to get viewer ID
-        const initialData = await fetchGitHubGraphQL<GraphQLResponse>(
-          buildCommitsQuery(`${todayStr}T00:00:00Z`)
+        const data = await fetchGitHubGraphQL<GraphQLResponse>(buildCommitsQuery(fromISO));
+        if (isCancelled) {
+          return;
+        }
+
+        const weeks = data.viewer.contributionsCollection.contributionCalendar.weeks;
+        const { commitsToday: todayCount, commitsYesterday: yesterdayCount } = extractCounts(
+          weeks,
+          todayISO,
+          yesterdayISO,
         );
-        const viewerId = initialData.viewer.id;
 
-        // Query with author filter
-        const [todayData, yesterdayData] = await Promise.all([
-          fetchGitHubGraphQL<GraphQLResponse>(buildCommitsQuery(`${todayStr}T00:00:00Z`, viewerId)),
-          fetchGitHubGraphQL<GraphQLResponse>(buildCommitsQuery(`${yesterdayStr}T00:00:00Z`, viewerId)),
-        ]);
-
-        if (isCancelled) return;
-
-        const todayTotal = todayData.viewer.repositories.nodes.reduce((sum, repo) => {
-          return sum + (repo.defaultBranchRef?.target?.history?.totalCount ?? 0);
-        }, 0);
-
-        const yesterdayTotal = yesterdayData.viewer.repositories.nodes.reduce((sum, repo) => {
-          return sum + (repo.defaultBranchRef?.target?.history?.totalCount ?? 0);
-        }, 0);
-
-        const reposWithCommitsToday = todayData.viewer.repositories.nodes.filter(
-          repo => (repo.defaultBranchRef?.target?.history?.totalCount ?? 0) > 0
+        const repoContributions = data.viewer.contributionsCollection.commitContributionsByRepository;
+        const reposWithCommitsToday = repoContributions.filter(
+          repo => repo.contributions.totalCount > 0,
         ).length;
 
-        setCommitsToday(todayTotal);
-        setCommitsYesterday(yesterdayTotal - todayTotal);
+        setCommitsToday(todayCount);
+        setCommitsYesterday(yesterdayCount);
         setRepoCount(reposWithCommitsToday);
+        writeCache({
+          commitsToday: todayCount,
+          commitsYesterday: yesterdayCount,
+          repoCount: reposWithCommitsToday,
+        });
       } catch (error) {
         if (!isCancelled) {
           console.error('Error fetching commits:', error);
@@ -112,4 +180,3 @@ export function useCommits() {
 
   return { commitsToday, commitsYesterday, repoCount, fetching };
 }
-

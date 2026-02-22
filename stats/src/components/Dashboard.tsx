@@ -3,14 +3,11 @@ import CommitsStats from './CommitsStats';
 
 function Dashboard() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>aidencullo</h1>
-        <CommitsStats />
-      </header>
-    </div>
+    <main className="terminal-shell" aria-label="Git stats terminal">
+      <p className="terminal-line terminal-line--brand">aidencullo@stats:~$ ./commit-report</p>
+      <CommitsStats />
+    </main>
   );
 }
 
 export default Dashboard;
-
