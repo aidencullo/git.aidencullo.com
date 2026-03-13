@@ -60,8 +60,10 @@ export function useCommits(): CommitStats {
 
       try {
         for (let page = 1; page <= PAGES; page++) {
+          const token = import.meta.env.VITE_GITHUB_TOKEN as string | undefined;
           const res = await fetch(
-            `https://api.github.com/users/${USERNAME}/events?per_page=100&page=${page}`
+            `https://api.github.com/users/${USERNAME}/events?per_page=100&page=${page}`,
+            token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
           );
           if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
           const events: GitHubEvent[] = await res.json();
