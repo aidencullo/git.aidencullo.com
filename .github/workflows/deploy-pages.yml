@@ -35,9 +35,8 @@ jobs:
       - name: Build
         working-directory: stats
         env:
-          BASE_PATH: /${{ github.event.repository.name }}/
           VITE_GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npm run build -- --base=$BASE_PATH
+        run: npm run build -- --base=/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
