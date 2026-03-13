@@ -1,115 +1,110 @@
 import { useEffect, useState } from 'react';
-import { fetchGitHubGraphQL } from '../utils/github';
-import { formatDateToISO, getRelativeDate } from '../utils/dates';
 
-interface RepoNode {
-  name: string;
-  defaultBranchRef: {
-    target: {
-      history: {
-        totalCount: number;
-      };
-    };
-  } | null;
+const USERNAME = 'aidencullo';
+const DAYS = 30;
+const PAGES = 3;
+
+interface GitHubEvent {
+  type: string;
+  created_at: string;
+  payload: { size?: number };
 }
 
-interface GraphQLResponse {
-  viewer: {
-    id: string;
-    repositories: {
-      nodes: RepoNode[];
-    };
-  };
+function toLocalDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('sv-SE'); // YYYY-MM-DD in local tz
 }
 
-function buildCommitsQuery(sinceDate: string, authorId?: string): string {
-  const authorFilter = authorId ? `, author: {id: "${authorId}"}` : '';
-  return `{
-    viewer {
-      id
-      repositories(first: 100, orderBy: {field: PUSHED_AT, direction: DESC}, ownerAffiliations: OWNER) {
-        nodes {
-          name
-          defaultBranchRef {
-            target {
-              ... on Commit {
-                history(first: 1, since: "${sinceDate}"${authorFilter}) {
-                  totalCount
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }`;
+function todayStr(): string {
+  return new Date().toLocaleDateString('sv-SE');
 }
 
-export function useCommits() {
-  const [commitsToday, setCommitsToday] = useState(0);
-  const [commitsYesterday, setCommitsYesterday] = useState(0);
-  const [repoCount, setRepoCount] = useState(0);
-  const [fetching, setFetching] = useState(false);
+function lastNDates(n: number): string[] {
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (n - 1 - i));
+    return d.toLocaleDateString('sv-SE');
+  });
+}
+
+export interface DailyCount {
+  date: string;
+  count: number;
+}
+
+export interface CommitStats {
+  daily: DailyCount[];
+  today: number;
+  thisWeek: number;
+  thisMonth: number;
+  streak: number;
+  loading: boolean;
+  error: string | null;
+}
+
+export function useCommits(): CommitStats {
+  const [stats, setStats] = useState<CommitStats>({
+    daily: [],
+    today: 0,
+    thisWeek: 0,
+    thisMonth: 0,
+    streak: 0,
+    loading: true,
+    error: null,
+  });
 
   useEffect(() => {
-    let isCancelled = false;
+    let cancelled = false;
 
-    const fetchCommits = async () => {
+    async function fetch_() {
+      const counts = new Map<string, number>();
+
       try {
-        setFetching(true);
+        for (let page = 1; page <= PAGES; page++) {
+          const res = await fetch(
+            `https://api.github.com/users/${USERNAME}/events?per_page=100&page=${page}`
+          );
+          if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
+          const events: GitHubEvent[] = await res.json();
+          if (events.length === 0) break;
 
-        const now = new Date();
-        const todayStr = formatDateToISO(now);
-        const yesterdayDate = getRelativeDate(now, -1);
-        const yesterdayStr = formatDateToISO(yesterdayDate);
-
-        // First query to get viewer ID
-        const initialData = await fetchGitHubGraphQL<GraphQLResponse>(
-          buildCommitsQuery(`${todayStr}T00:00:00Z`)
-        );
-        const viewerId = initialData.viewer.id;
-
-        // Query with author filter
-        const [todayData, yesterdayData] = await Promise.all([
-          fetchGitHubGraphQL<GraphQLResponse>(buildCommitsQuery(`${todayStr}T00:00:00Z`, viewerId)),
-          fetchGitHubGraphQL<GraphQLResponse>(buildCommitsQuery(`${yesterdayStr}T00:00:00Z`, viewerId)),
-        ]);
-
-        if (isCancelled) return;
-
-        const todayTotal = todayData.viewer.repositories.nodes.reduce((sum, repo) => {
-          return sum + (repo.defaultBranchRef?.target?.history?.totalCount ?? 0);
-        }, 0);
-
-        const yesterdayTotal = yesterdayData.viewer.repositories.nodes.reduce((sum, repo) => {
-          return sum + (repo.defaultBranchRef?.target?.history?.totalCount ?? 0);
-        }, 0);
-
-        const reposWithCommitsToday = todayData.viewer.repositories.nodes.filter(
-          repo => (repo.defaultBranchRef?.target?.history?.totalCount ?? 0) > 0
-        ).length;
-
-        setCommitsToday(todayTotal);
-        setCommitsYesterday(yesterdayTotal - todayTotal);
-        setRepoCount(reposWithCommitsToday);
-      } catch (error) {
-        if (!isCancelled) {
-          console.error('Error fetching commits:', error);
+          for (const e of events) {
+            if (e.type !== 'PushEvent') continue;
+            const date = toLocalDate(e.created_at);
+            counts.set(date, (counts.get(date) ?? 0) + (e.payload.size ?? 1));
+          }
         }
-      } finally {
-        if (!isCancelled) {
-          setFetching(false);
-        }
+      } catch (err) {
+        if (!cancelled) setStats(s => ({ ...s, loading: false, error: String(err) }));
+        return;
       }
-    };
 
-    fetchCommits();
+      if (cancelled) return;
 
-    return () => {
-      isCancelled = true;
-    };
+      const dates = lastNDates(DAYS);
+      const daily = dates.map(date => ({ date, count: counts.get(date) ?? 0 }));
+
+      const today = counts.get(todayStr()) ?? 0;
+      const thisWeek = daily.slice(-7).reduce((s, d) => s + d.count, 0);
+      const currentMonth = todayStr().slice(0, 7);
+      const thisMonth = daily
+        .filter(d => d.date.startsWith(currentMonth))
+        .reduce((s, d) => s + d.count, 0);
+
+      // streak: consecutive days with commits going back from today (skip today if 0)
+      let streak = 0;
+      const reversed = [...daily].reverse();
+      const start = reversed[0].count === 0 ? 1 : 0;
+      for (let i = start; i < reversed.length; i++) {
+        if (reversed[i].count > 0) streak++;
+        else break;
+      }
+
+      setStats({ daily, today, thisWeek, thisMonth, streak, loading: false, error: null });
+    }
+
+    fetch_();
+    return () => { cancelled = true; };
   }, []);
 
-  return { commitsToday, commitsYesterday, repoCount, fetching };
+  return stats;
 }
-
