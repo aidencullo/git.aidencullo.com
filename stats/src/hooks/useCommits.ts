@@ -15,8 +15,17 @@ function lastNDates(n: number): string[] {
   });
 }
 
+function tzOffset(): string {
+  const offset = new Date().getTimezoneOffset();
+  const sign = offset <= 0 ? '+' : '-';
+  const h = String(Math.floor(Math.abs(offset) / 60)).padStart(2, '0');
+  const m = String(Math.abs(offset) % 60).padStart(2, '0');
+  return `${sign}${h}:${m}`;
+}
+
 function dateToISO(date: string, end = false): string {
-  return end ? `${date}T23:59:59Z` : `${date}T00:00:00Z`;
+  const tz = tzOffset();
+  return end ? `${date}T23:59:59${tz}` : `${date}T00:00:00${tz}`;
 }
 
 export interface DailyCount {
