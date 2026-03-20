@@ -59,6 +59,34 @@ query($login: String!, $from: DateTime!, $to: DateTime!) {
   }
 }`;
 
+async function fetchGitHub(token: string | undefined, from: string, to: string): Promise<Map<string, number>> {
+  const res = await fetch('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ query: GRAPHQL_QUERY, variables: { login: USERNAME, from, to } }),
+  });
+  if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0].message);
+
+  const days: { date: string; contributionCount: number }[] =
+    json.data.user.contributionsCollection.contributionCalendar.weeks.flatMap(
+      (w: { contributionDays: { date: string; contributionCount: number }[] }) => w.contributionDays
+    );
+
+  return new Map(days.map(d => [d.date, d.contributionCount]));
+}
+
+async function fetchGitLab(): Promise<Map<string, number>> {
+  const res = await fetch(`https://gitlab.com/users/${USERNAME}/calendar.json`);
+  if (!res.ok) throw new Error(`GitLab API returned ${res.status}`);
+  const json: Record<string, number> = await res.json();
+  return new Map(Object.entries(json));
+}
+
 export function useCommits(): CommitStats {
   const [stats, setStats] = useState<CommitStats>({
     daily: [],
@@ -80,29 +108,18 @@ export function useCommits(): CommitStats {
       const to = dateToISO(todayStr(), true);
 
       try {
-        const res = await fetch('https://api.github.com/graphql', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ query: GRAPHQL_QUERY, variables: { login: USERNAME, from, to } }),
-        });
-        if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
-        const json = await res.json();
-        if (json.errors) throw new Error(json.errors[0].message);
-
-        const days: { date: string; contributionCount: number }[] =
-          json.data.user.contributionsCollection.contributionCalendar.weeks.flatMap(
-            (w: { contributionDays: { date: string; contributionCount: number }[] }) => w.contributionDays
-          );
-
-        const counts = new Map(days.map(d => [d.date, d.contributionCount]));
+        const [ghCounts, glCounts] = await Promise.all([
+          fetchGitHub(token, from, to),
+          fetchGitLab(),
+        ]);
 
         if (cancelled) return;
 
-        const daily = dates.map(date => ({ date, count: counts.get(date) ?? 0 }));
-        const today = counts.get(todayStr()) ?? 0;
+        const daily = dates.map(date => ({
+          date,
+          count: (ghCounts.get(date) ?? 0) + (glCounts.get(date) ?? 0),
+        }));
+        const today = daily[daily.length - 1].count;
         const thisWeek = daily.slice(-7).reduce((s, d) => s + d.count, 0);
         const currentMonth = todayStr().slice(0, 7);
         const thisMonth = daily
