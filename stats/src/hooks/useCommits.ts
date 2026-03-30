@@ -81,10 +81,15 @@ async function fetchGitHub(token: string | undefined, from: string, to: string):
 }
 
 async function fetchGitLab(): Promise<Map<string, number>> {
-  const res = await fetch(`https://gitlab.com/users/${USERNAME}/calendar.json`);
-  if (!res.ok) throw new Error(`GitLab API returned ${res.status}`);
-  const json: Record<string, number> = await res.json();
-  return new Map(Object.entries(json));
+  try {
+    const res = await fetch(`https://gitlab.com/users/${USERNAME}/calendar.json`);
+    if (!res.ok) return new Map();
+    const json: Record<string, number> = await res.json();
+    return new Map(Object.entries(json));
+  } catch {
+    // GitLab doesn't send CORS headers, so this fails from browser origins
+    return new Map();
+  }
 }
 
 export function useCommits(): CommitStats {
