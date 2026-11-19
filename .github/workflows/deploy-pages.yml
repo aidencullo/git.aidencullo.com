@@ -4,6 +4,8 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
 
 permissions:
   contents: read
@@ -32,10 +34,14 @@ jobs:
         working-directory: stats
         run: npm ci
 
-      - name: Build
+      - name: Fetch contributions
         working-directory: stats
         env:
-          VITE_GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/fetch-contributions.mjs
+
+      - name: Build
+        working-directory: stats
         run: npm run build -- --base=/
 
       - name: Upload artifact

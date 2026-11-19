@@ -2,13 +2,12 @@ import '../App.css';
 import { useCommits } from '../hooks/useCommits';
 
 export default function Dashboard() {
-  const { daily, today, thisWeek, thisMonth, streak, loading, error } = useCommits();
+  const { daily, today, todayDate, thisWeek, thisMonth, streak, loading, error } = useCommits();
 
   if (loading) return <div className="loading">fetching commits…</div>;
   if (error) return <div className="error">{error}</div>;
 
   const max = Math.max(...daily.map(d => d.count), 1);
-  const todayDate = new Date().toLocaleDateString('sv-SE');
 
   return (
     <div className="container">

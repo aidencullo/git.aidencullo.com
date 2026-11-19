@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-React + TypeScript + Vite dashboard application that displays GitHub commit statistics (commits today and yesterday) for user `aidencullo`.
+React + TypeScript + Vite dashboard application that displays daily GitHub + GitLab commit counts for user `aidencullo`.
 
 ## Commands
 
@@ -20,46 +20,34 @@ npm run preview  # Preview production build
 ## Architecture
 
 ```
-stats/src/
-├── main.tsx              # React DOM entry point
-├── App.tsx               # Root component
-├── components/
-│   ├── Dashboard.tsx     # Main layout
-│   └── CommitsStats.tsx  # Displays commit counts
-├── hooks/
-│   └── useCommits.ts     # Fetches GitHub events, returns {commitsToday, commitsYesterday, fetching}
-├── utils/
-│   ├── github.ts         # GitHub API helpers (buildUserEventsUrl, fetchGitHubJson)
-│   ├── commits.ts        # countCommitsForRecentDays() - processes events into counts
-│   └── dates.ts          # Date formatting with timezone support
-└── constants/
-    ├── github.ts         # GITHUB_USERNAME, API settings
-    └── time.ts           # DEFAULT_TIME_ZONE (America/New_York), locale
+stats/
+├── src/
+│   ├── main.tsx              # React DOM entry point
+│   ├── App.tsx               # Root component
+│   ├── components/
+│   │   └── Dashboard.tsx     # Main layout
+│   └── hooks/
+│       └── useCommits.ts     # Loads /contributions.json, computes stats
+├── scripts/
+│   └── fetch-contributions.mjs  # Build-time fetch using GITHUB_TOKEN
+└── public/
+    └── contributions.json    # Generated data served by GitHub Pages
 ```
 
-**Data flow:** `CommitsStats` → `useCommits` hook → GitHub GraphQL API
+**Data flow:** Actions workflow → `fetch-contributions.mjs` (GitHub GraphQL + GitLab calendar) → `public/contributions.json` → `useCommits` hook → `Dashboard`. The browser never calls the GitHub API directly.
+
+## Data generation
+
+`stats/scripts/fetch-contributions.mjs` runs during the Pages workflow (hourly, on push, and via `workflow_dispatch`). It uses the workflow's built-in `GITHUB_TOKEN` to query GitHub's GraphQL `contributionsCollection` for the last 30 days, merges GitLab's public contribution calendar, and writes `stats/public/contributions.json`.
 
 ## useCommits Hook Logic
 
-The `useCommits` hook (`stats/src/hooks/useCommits.ts`) fetches commit counts using GitHub's GraphQL API:
-
-1. **Queries:** Makes 3 GraphQL requests:
-   - Initial query to get the authenticated user's GitHub ID
-   - Query for commits since today's midnight UTC
-   - Query for commits since yesterday's midnight UTC
-
-2. **Counting:** The `since` parameter is cumulative (returns all commits from that date to now):
-   - `todayTotal` = commits since today 00:00:00 UTC
-   - `yesterdayTotal` = commits since yesterday 00:00:00 UTC (includes today)
-   - `commitsYesterday` = `yesterdayTotal - todayTotal`
-
-3. **Scope:** Queries up to 100 repos owned by the user, sums `totalCount` from each repo's default branch history
-
-**Known Issue:** The query uses UTC midnight (`T00:00:00Z`), not local timezone. For users in America/New_York, this means date boundaries are 5-8 hours off from local time.
+`stats/src/hooks/useCommits.ts` fetches the static `/contributions.json` from the same origin, then derives `today`, `thisWeek`, `thisMonth`, and `streak` from the most recent 30 days of counts. No API token is used in the browser.
 
 ## Environment Variables
 
-Optional `VITE_GITHUB_TOKEN` in `stats/.env.local` for higher GitHub API rate limits. Without it, uses public API (60 requests/hour).
+- `GITHUB_TOKEN` — provided automatically by GitHub Actions to the fetch script. No token is bundled into client-side code.
+- For local regeneration of `stats/public/contributions.json`, run `GITHUB_TOKEN=<your token> node scripts/fetch-contributions.mjs` from `stats/`. Without a token it writes empty counts.
 
 ## Code Patterns
 
