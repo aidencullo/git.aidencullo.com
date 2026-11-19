@@ -34,15 +34,15 @@ stats/
     └── contributions.json    # Generated data served by GitHub Pages
 ```
 
-**Data flow:** Actions workflow → `fetch-contributions.mjs` (GitHub GraphQL + GitLab calendar) → `public/contributions.json` → `useCommits` hook → `Dashboard`. The browser never calls the GitHub API directly.
+**Data flow:** Actions workflow → `fetch-contributions.mjs` (GitHub GraphQL + GitLab calendar) → `public/contributions.json` with separate `github` and `gitlab` count maps → `useCommits` hook → two `SourceChart` sections in `Dashboard`. The browser never calls the GitHub API directly.
 
 ## Data generation
 
-`stats/scripts/fetch-contributions.mjs` runs during the Pages workflow (hourly, on push, and via `workflow_dispatch`). It uses the workflow's built-in `GITHUB_TOKEN` to query GitHub's GraphQL `contributionsCollection` for the last 30 days, merges GitLab's public contribution calendar, and writes `stats/public/contributions.json`.
+`stats/scripts/fetch-contributions.mjs` runs during the Pages workflow (hourly, on push, and via `workflow_dispatch`). It uses the workflow's built-in `GITHUB_TOKEN` to query GitHub's GraphQL `contributionsCollection` for the last 30 days, also fetches GitLab's public contribution calendar, and writes both into `stats/public/contributions.json` under `github` and `gitlab` keys.
 
 ## useCommits Hook Logic
 
-`stats/src/hooks/useCommits.ts` fetches the static `/contributions.json` from the same origin, then derives `today`, `thisWeek`, `thisMonth`, and `streak` from the most recent 30 days of counts. No API token is used in the browser.
+`stats/src/hooks/useCommits.ts` fetches the static `/contributions.json` from the same origin, then derives `today`, `thisWeek`, `thisMonth`, and `streak` separately for GitHub and GitLab from the most recent 30 days. `Dashboard.tsx` renders each source with the same `SourceChart` layout. No API token is used in the browser.
 
 ## Environment Variables
 

@@ -35,7 +35,8 @@ function lastNDates(n) {
 const dates = lastNDates(DAYS);
 const from = `${dates[0]}T00:00:00Z`;
 const to = new Date().toISOString();
-const counts = new Map(dates.map(date => [date, 0]));
+const githubCounts = new Map(dates.map(date => [date, 0]));
+const gitlabCounts = new Map(dates.map(date => [date, 0]));
 
 const token = process.env.GITHUB_TOKEN;
 
@@ -58,7 +59,7 @@ if (token) {
     week => week.contributionDays
   );
   for (const day of days) {
-    if (counts.has(day.date)) counts.set(day.date, day.contributionCount);
+    if (githubCounts.has(day.date)) githubCounts.set(day.date, day.contributionCount);
   }
 } else {
   console.warn('GITHUB_TOKEN is not set; writing empty contribution data.');
@@ -70,7 +71,7 @@ try {
   if (res.ok) {
     const gitlab = await res.json();
     for (const [date, count] of Object.entries(gitlab)) {
-      if (counts.has(date)) counts.set(date, counts.get(date) + count);
+      if (gitlabCounts.has(date)) gitlabCounts.set(date, count);
     }
   } else {
     console.warn(`GitLab calendar returned ${res.status}; skipping GitLab counts.`);
@@ -81,7 +82,8 @@ try {
 
 const payload = {
   generatedAt: new Date().toISOString(),
-  counts: Object.fromEntries(dates.map(date => [date, counts.get(date)])),
+  github: Object.fromEntries(dates.map(date => [date, githubCounts.get(date)])),
+  gitlab: Object.fromEntries(dates.map(date => [date, gitlabCounts.get(date)])),
 };
 
 await mkdir(dirname(outputPath), { recursive: true });
