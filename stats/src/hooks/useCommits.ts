@@ -38,10 +38,23 @@ const EMPTY_STATS: SourceStats = {
   streak: 0,
 };
 
-async function fetchContributions(): Promise<ContributionData> {
-  const res = await fetch('/contributions.json');
+const LIVE_API_URL = import.meta.env.VITE_CONTRIBUTIONS_API_URL as string | undefined;
+
+async function getJson(url: string): Promise<ContributionData> {
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Contribution data returned ${res.status}`);
   return res.json();
+}
+
+async function fetchContributions(): Promise<ContributionData> {
+  if (LIVE_API_URL) {
+    try {
+      return await getJson(LIVE_API_URL);
+    } catch (err) {
+      console.warn('Live contribution API failed; falling back to snapshot.', err);
+    }
+  }
+  return getJson('/contributions.json');
 }
 
 function summarize(counts: Record<string, number> | undefined): SourceStats {
