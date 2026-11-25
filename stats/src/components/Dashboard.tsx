@@ -48,16 +48,26 @@ function SourceChart({ title, stats }: { title: string; stats: SourceStats }) {
 }
 
 export default function Dashboard() {
-  const { github, gitlab, loading, error } = useCommits();
+  const { github, loading, error } = useCommits();
 
   if (loading) return <div className="loading">fetching commits…</div>;
   if (error) return <div className="error">{error}</div>;
 
+  const dateLabel = github.todayDate
+    ? new Date(`${github.todayDate}T00:00:00Z`).toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'UTC',
+      })
+    : '';
+
   return (
     <div className="container">
       <h1>aidencullo</h1>
+      {dateLabel && <p className="date">{dateLabel}</p>}
       <SourceChart title="GitHub" stats={github} />
-      <SourceChart title="GitLab" stats={gitlab} />
     </div>
   );
 }

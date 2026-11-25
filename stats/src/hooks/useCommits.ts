@@ -5,7 +5,6 @@ const DAYS = 30;
 interface ContributionData {
   generatedAt: string;
   github: Record<string, number>;
-  gitlab: Record<string, number>;
 }
 
 export interface DailyCount {
@@ -24,7 +23,6 @@ export interface SourceStats {
 
 export interface CommitStats {
   github: SourceStats;
-  gitlab: SourceStats;
   loading: boolean;
   error: string | null;
 }
@@ -85,7 +83,6 @@ function summarize(counts: Record<string, number> | undefined): SourceStats {
 export function useCommits(): CommitStats {
   const [stats, setStats] = useState<CommitStats>({
     github: EMPTY_STATS,
-    gitlab: EMPTY_STATS,
     loading: true,
     error: null,
   });
@@ -96,12 +93,11 @@ export function useCommits(): CommitStats {
     async function fetch_() {
       try {
         const data = await fetchContributions();
-        if (!data.github && !data.gitlab) throw new Error('No contribution data available');
+        if (!data.github) throw new Error('No contribution data available');
 
         if (!cancelled) {
           setStats({
             github: summarize(data.github),
-            gitlab: summarize(data.gitlab),
             loading: false,
             error: null,
           });

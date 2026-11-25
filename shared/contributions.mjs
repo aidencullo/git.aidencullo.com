@@ -29,7 +29,6 @@ export async function fetchContributions({ githubToken, fetchImpl = fetch }) {
   const from = `${dates[0]}T00:00:00Z`;
   const to = new Date().toISOString();
   const githubCounts = new Map(dates.map(date => [date, 0]));
-  const gitlabCounts = new Map(dates.map(date => [date, 0]));
 
   if (githubToken) {
     const res = await fetchImpl('https://api.github.com/graphql', {
@@ -58,24 +57,8 @@ export async function fetchContributions({ githubToken, fetchImpl = fetch }) {
     }
   }
 
-  // GitLab exposes a public contribution calendar without authentication.
-  try {
-    const res = await fetchImpl(`https://gitlab.com/users/${USERNAME}/calendar.json`);
-    if (res.ok) {
-      const gitlab = await res.json();
-      for (const [date, count] of Object.entries(gitlab)) {
-        if (gitlabCounts.has(date)) gitlabCounts.set(date, count);
-      }
-    } else {
-      console.warn(`GitLab calendar returned ${res.status}; skipping GitLab counts.`);
-    }
-  } catch (err) {
-    console.warn(`GitLab calendar fetch failed: ${err}; skipping GitLab counts.`);
-  }
-
   return {
     generatedAt: new Date().toISOString(),
     github: Object.fromEntries(dates.map(date => [date, githubCounts.get(date)])),
-    gitlab: Object.fromEntries(dates.map(date => [date, gitlabCounts.get(date)])),
   };
 }

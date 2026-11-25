@@ -1,8 +1,8 @@
 # Live contributions API
 
-Cloudflare Worker that returns the same `{ generatedAt, github, gitlab }` payload as
-`stats/public/contributions.json`, but fetches fresh data on every request. The
-dashboard at git.aidencullo.com calls this instead of the static snapshot.
+Cloudflare Worker that returns the same `{ generatedAt, github }` payload as
+`stats/public/contributions.json`, but fetches fresh GitHub data on every request.
+The dashboard at git.aidencullo.com calls this instead of the static snapshot.
 
 ## Deploy
 
