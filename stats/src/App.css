@@ -13,24 +13,105 @@ h1, h2 {
   text-transform: uppercase;
 }
 
-.profile h1 {
-  margin-bottom: 0.25rem;
+.profile-card {
+  position: relative;
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  background: #0d1117;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  color: #39d353;
+  border: 1px solid #238636;
+  border-radius: 6px;
+  background: #0f2419;
+}
+
+.profile-info {
+  min-width: 0;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6e7681;
+}
+
+.profile-card h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #e6edf3;
+  letter-spacing: 0.1em;
+  margin: 0.1rem 0 0.6rem;
+}
+
+.handle-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  color: #8b949e;
 }
 
 .username {
-  font-size: 0.85rem;
-  color: #c9d1d9;
-  margin: 0 0 0.35rem;
+  color: #39d353;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px dashed #238636;
 }
 
-.username strong {
-  font-weight: 600;
+.username:hover {
+  color: #56d364;
+  border-bottom-style: solid;
 }
 
 .date {
-  font-size: 0.85rem;
-  color: #848d97;
-  margin: 0 0 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: #8b949e;
+  margin: 0.55rem 0 0;
+}
+
+.live-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #39d353;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #39d353;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(57, 211, 83, 0.12); }
+  50% { box-shadow: 0 0 0 6px rgba(57, 211, 83, 0); }
 }
 
 .section {
