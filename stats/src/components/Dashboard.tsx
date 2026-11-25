@@ -65,8 +65,11 @@ export default function Dashboard() {
 
   return (
     <div className="container">
-      <h1>aidencullo</h1>
-      {dateLabel && <p className="date">{dateLabel}</p>}
+      <header className="profile">
+        <h1>Aiden</h1>
+        <p className="username">GitHub username: <strong>aidencullo</strong></p>
+        {dateLabel && <p className="date">{dateLabel}</p>}
+      </header>
       <SourceChart title="GitHub" stats={github} />
     </div>
   );
